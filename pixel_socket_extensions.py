@@ -57,8 +57,16 @@ class PixelSocketPutObjectStorageNode(comfy_api_io.ComfyNode):
                     optional=False
                 ),
                 comfy_api_io.Model.Input("checkpoint_name"),
-                comfy_api_io.Conditioning.Input("positive_prompt"),
-                comfy_api_io.Conditioning.Input("negative_prompt"),
+                comfy_api_io.String.Input("positive_prompt",
+                    default="",
+                    multi_line=True,
+                    optional=False
+                ),
+                comfy_api_io.String.Input("negative_prompt",
+                    default="",
+                    multi_line=True,
+                    optional=False
+                ),
                 comfy_api_io.Int.Input("seed_value",
                     default=0,
                     min=0,
@@ -230,8 +238,16 @@ class PixelSocketDeliveryImageNode(comfy_api_io.ComfyNode):
                     optional=False
                 ),
                 comfy_api_io.Model.Input("checkpoint_name"),
-                comfy_api_io.Conditioning.Input("positive_prompt"),
-                comfy_api_io.Conditioning.Input("negative_prompt"),
+                comfy_api_io.String.Input("positive_prompt",
+                    default="",
+                    multi_line=True,
+                    optional=False
+                ),
+                comfy_api_io.String.Input("negative_prompt",
+                    default="",
+                    multi_line=True,
+                    optional=False
+                ),
                 comfy_api_io.Int.Input("seed_value",
                     default=0,
                     min=0,
