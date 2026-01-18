@@ -186,6 +186,7 @@ class PixelSocketPutObjectStorageNode(comfy_api_io.ComfyNode):
                     "objectUrl": object_url,
                     "secretToken": secret_token,
                     "timestamp": epoch_time,
+                    "promptParams": metadata
                 }
             }
             packed: bytes = msgpack.packb(payload, use_bin_type=True)
@@ -337,6 +338,7 @@ class PixelSocketDeliveryImageNode(comfy_api_io.ComfyNode):
                     "objectUrl": None,
                     "secretToken": secret_token,
                     "timestamp": epoch_time,
+                    "promptParams": metadata
                 }
             }
             packed: bytes = msgpack.packb(payload, use_bin_type=True)
