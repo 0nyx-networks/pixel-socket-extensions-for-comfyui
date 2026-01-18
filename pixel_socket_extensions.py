@@ -160,16 +160,8 @@ class PixelSocketDeliveryImageNode(comfy_api_io.ComfyNode):
                     optional=True,
                     multiline=False
                 ),
-                comfy_api_io.Conditioning.Input("positive_prompt",
-                    default="",
-                    optional=True,
-                    multiline=True
-                ),
-                comfy_api_io.Conditioning.Input("negative_prompt",
-                    default="",
-                    optional=True,
-                    multiline=True
-                ),
+                comfy_api_io.Conditioning.Input("positive_prompt"),
+                comfy_api_io.Conditioning.Input("negative_prompt"),
                 comfy_api_io.Int.Input("seed_value",
                     default=0,
                     min=0,
