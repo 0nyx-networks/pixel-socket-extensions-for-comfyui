@@ -1,0 +1,6 @@
+boto3
+msgpack-python
+numpy
+pillow
+websocket-client
+zstd
