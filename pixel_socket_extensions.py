@@ -388,14 +388,14 @@ class PixelSocketExtensions(ComfyExtension):
             pnginfo = PngInfo()
             for key, value in metadata.items():
                 pnginfo.add_text(key, str(value))
-            pnginfo.add_text("json_format", json.dumps(metadata, ensure_ascii=False))
+            pnginfo.add_text("json_format", json.dumps(metadata, ensure_ascii=True))
 
             img.save(buf, format="PNG", pnginfo=pnginfo)
 
         elif file_format.lower() == "webp":
             exif_bytes = piexif.dump({
                 "Exif": {
-                    piexif.ExifIFD.UserComment: json.dumps(metadata)
+                    piexif.ExifIFD.UserComment: b"ASCII\x00\x00\x00" + json.dumps(metadata, ensure_ascii=True).encode('utf-8')
                 },
             })
             img.save(buf, format="WEBP", optimize=True, lossless=True, exif=exif_bytes)
