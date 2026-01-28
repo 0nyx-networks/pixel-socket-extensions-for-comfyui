@@ -91,6 +91,13 @@ class PixelSocketDeliveryImageNode(comfy_api_io.ComfyNode):
                     optional=False,
                     display_mode=comfy_api_io.NumberDisplay.number
                 ),
+                comfy_api_io.Int.Input("oxipng_level",
+                    default=0,
+                    min=0,
+                    max=6,
+                    optional=True,
+                    display_mode=comfy_api_io.NumberDisplay.number
+                ),
             ],
             outputs=[]
         )
@@ -110,6 +117,7 @@ class PixelSocketDeliveryImageNode(comfy_api_io.ComfyNode):
                 height: int,
                 step: int,
                 cfg: float,
+                oxipng_level: int = 0,
                 **kwargs) -> None:
         try:
             epoch_time:int = int(time.time() * 1000)
@@ -125,7 +133,7 @@ class PixelSocketDeliveryImageNode(comfy_api_io.ComfyNode):
                 "cfg": cfg,
             }
 
-            img_bytes = PixelSocketExtensions.tensor_to_image_bytes(image, file_format, metadata)
+            img_bytes = PixelSocketExtensions.tensor_to_image_bytes(image, file_format, oxipng_level, metadata)
             img_size = len(img_bytes)
 
             # Create payload
@@ -171,7 +179,7 @@ class PixelSocketExtensions(ComfyExtension):
         return [PixelSocketDeliveryImageNode]
 
     @classmethod
-    def tensor_to_image_bytes(cls, image: torch.Tensor, file_format: str, metadata: dict[str, Any]) -> bytes:
+    def tensor_to_image_bytes(cls, image: torch.Tensor, file_format: str, oxipng_level: int, metadata: dict[str, Any]) -> bytes:
         arr = image.detach().cpu().numpy()
 
         # 余分な次元を削除
@@ -197,8 +205,9 @@ class PixelSocketExtensions(ComfyExtension):
             img.save(buf, format="PNG", pnginfo=pnginfo)
 
             # Optimize PNG using oxipng
-            buf.seek(0)
-            buf = io.BytesIO(oxipng.optimize_from_memory(buf.getvalue(), level=4))
+            if oxipng_level > 0 and oxipng_level <= 6:
+                buf.seek(0)
+                buf = io.BytesIO(oxipng.optimize_from_memory(buf.getvalue(), level=oxipng_level))
 
         elif file_format.lower() == "webp":
             exif_bytes = piexif.dump({
