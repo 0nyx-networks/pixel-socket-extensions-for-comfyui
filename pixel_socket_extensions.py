@@ -126,15 +126,15 @@ class PixelSocketDeliveryImageNode(comfy_api_io.ComfyNode):
             epoch_time:int = int(time.time() * 1000)
 
             metadata: dict[str, Any] = {
-                "checkpoint_name": checkpoint_name,
-                "positive_prompt": positive_prompt,
-                "negative_prompt": negative_prompt,
-                "seed_value": seed_value,
+                "checkpointName": checkpoint_name,
+                "positivePrompt": positive_prompt,
+                "negativePrompt": negative_prompt,
+                "seedValue": seed_value,
                 "width": width,
                 "height": height,
                 "step": step,
                 "cfg": cfg,
-                "comfyui_version": getattr(comfy, "__version__", "unknown"),
+                "comfyuiVersion": getattr(comfy, "__version__", "unknown"),
             }
 
             img_bytes = PixelSocketExtensions.tensor_to_image_bytes(image, file_format, oxipng_level, metadata)
