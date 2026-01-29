@@ -194,7 +194,6 @@ class PixelSocketLoadImageFromBase64Node(comfy_api_io.ComfyNode):
             ],
             outputs=[
                 comfy_api_io.Image.Output("image"),
-                comfy_api_io.Mask.Output("mask"),
                 comfy_api_io.Int.Output("width"),
                 comfy_api_io.Int.Output("height"),
             ]
@@ -210,26 +209,14 @@ class PixelSocketLoadImageFromBase64Node(comfy_api_io.ComfyNode):
             image_data = base64.b64decode(image_base64)
 
             # Load image using PIL
-            img = Image.open(io.BytesIO(image_data)).convert("RGBA")
+            img = Image.open(io.BytesIO(image_data)).convert("RGB")  # Use RGB instead of RGBA
 
             # Convert to tensor
             img_array = np.array(img).astype(np.float32) / 255.0
 
-            # Extract alpha channel as mask before processing
-            img_mask: torch.Tensor
-            if img.mode == "RGBA" and img_array.shape[2] == 4:
-                img_mask = img_array[:, :, 3]  # Alpha channel (H, W)
-                img_mask = torch.from_numpy(img_mask).unsqueeze(0)  # Add batch dimension (1, H, W)
-            else:
-                # Create a full mask if no alpha channel
-                img_mask = torch.ones((1, img.height, img.width), dtype=torch.float32)
-
-            # img_array shape is (H, W, C) from PIL
-            # Convert to (1, C, H, W) format
-            if img_array.ndim == 3 and img_array.shape[2] == 4:
-                # For RGBA, use only RGB channels and convert
-                img_tensor = torch.from_numpy(img_array[:, :, :3].transpose(2, 0, 1)).unsqueeze(0)
-            elif img_array.ndim == 3:
+            # img_array shape is (H, W, C) from PIL - shape: (2008, 1512, 3)
+            # Convert to (1, C, H, W) format - shape: (1, 3, 2008, 1512)
+            if img_array.ndim == 3:
                 img_tensor = torch.from_numpy(img_array.transpose(2, 0, 1)).unsqueeze(0)
             else:
                 img_tensor = torch.from_numpy(img_array).unsqueeze(0).unsqueeze(0)
@@ -237,13 +224,13 @@ class PixelSocketLoadImageFromBase64Node(comfy_api_io.ComfyNode):
             width = img.width if img else None
             height = img.height if img else None
 
-            return comfy_api_io.NodeOutput(img_tensor, img_mask, width, height)
+            return comfy_api_io.NodeOutput(img_tensor, width, height)
 
         except Exception:
             import traceback
             traceback.print_exc()
 
-        return comfy_api_io.NodeOutput(None, None, None, None)
+        return comfy_api_io.NodeOutput(None, None, None)
 
 class PixelSocketExtensions(ComfyExtension):
     async def get_node_list(self) -> list[type[comfy_api_io.ComfyNode]]:
