@@ -9,6 +9,7 @@ import numpy as np
 import time
 import websocket
 import oxipng
+import base64
 
 import torch # pyright: ignore[reportMissingImports]
 import msgpack
@@ -19,7 +20,7 @@ class PixelSocketDeliveryImageNode(comfy_api_io.ComfyNode):
     def define_schema(cls) -> comfy_api_io.Schema:
         return comfy_api_io.Schema(
             node_id="PixelSocketDeliveryImageNode",
-            display_name="Pixel Socket Delivery Image Node",
+            display_name="Delivery Image Node",
             category="PixelSocket",
             is_output_node=True,
             inputs=[
@@ -174,9 +175,70 @@ class PixelSocketDeliveryImageNode(comfy_api_io.ComfyNode):
 
         return comfy_api_io.NodeOutput(image)
 
+class PixelSocketLoadImageFromBase64Node(ComfyExtension):
+    @classmethod
+    def define_schema(cls) -> comfy_api_io.Schema:
+        return comfy_api_io.Schema(
+            node_id="PixelSocketLoadImageFromBase64Node",
+            display_name="Load Image From Base64 Node",
+            category="PixelSocket",
+            is_output_node=True,
+            inputs=[
+                comfy_api_io.String.Input("image_base64",
+                    default="<IMAGE_BASE64>",
+                    multiline=True,
+                    optional=False
+                ),
+            ],
+            outputs=[
+                comfy_api_io.Image.Output("image"),
+                comfy_api_io.Mask.Output("mask"),
+                comfy_api_io.Int.Output("width"),
+                comfy_api_io.Int.Output("height"),
+            ]
+        )
+    @classmethod
+    def execute(cls,
+                image_base64: str,
+                **kwargs) -> None:
+
+        try:
+            # Decode base64 string
+            image_data = base64.b64decode(image_base64)
+
+            # Load image using PIL
+            img = Image.open(io.BytesIO(image_data)).convert("RGBA")
+
+            # Convert to tensor
+            img_array = np.array(img).astype(np.float32) / 255.0
+            img_tensor = torch.from_numpy(img_array).permute(2, 0, 1).unsqueeze(0)  # Add batch dimension
+
+            img_mask: torch.Tensor
+            # Extract alpha channel as mask
+            if img.mode == "RGBA" and img_array.shape[2] == 4:
+                img_mask = img_array[:, :, 3]  # Alpha channel
+                img_mask = torch.from_numpy(img_mask).unsqueeze(0)  # Add batch dimension
+            else:
+                # Create a full mask if no alpha channel
+                img_mask = torch.ones((1, img.height, img.width), dtype=torch.float32)
+
+            width = img.width if img else None
+            height = img.height if img else None
+
+            return comfy_api_io.NodeOutput(img_tensor, img_mask, width, height)
+
+        except Exception:
+            import traceback
+            traceback.print_exc()
+
+        return comfy_api_io.NodeOutput(None, None, None, None)
+
 class PixelSocketExtensions(ComfyExtension):
     async def get_node_list(self) -> list[type[comfy_api_io.ComfyNode]]:
-        return [PixelSocketDeliveryImageNode]
+        return [
+                    PixelSocketDeliveryImageNode,
+                    PixelSocketLoadImageFromBase64Node
+               ]
 
     @classmethod
     def tensor_to_image_bytes(cls, image: torch.Tensor, file_format: str, oxipng_level: int, metadata: dict[str, Any]) -> bytes:
