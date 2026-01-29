@@ -211,20 +211,50 @@ class PixelSocketLoadImageFromBase64Node(comfy_api_io.ComfyNode):
             # Load image using PIL
             img = Image.open(io.BytesIO(image_data)).convert("RGB")  # Use RGB instead of RGBA
 
+            # Validate and adjust image dimensions for VAE compatibility
+            min_dimension = 64
+            multiple_of = 8
+
+            width, height = img.size
+
+            # Ensure minimum dimensions
+            if width < min_dimension or height < min_dimension:
+                scale_factor = max(min_dimension / width, min_dimension / height)
+                new_width = int(width * scale_factor)
+                new_height = int(height * scale_factor)
+                img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                width, height = img.size
+                print(f"Upscaled image from original size to {width}x{height}")
+
+            # Round dimensions to nearest multiple of 8
+            width = (width // multiple_of) * multiple_of
+            height = (height // multiple_of) * multiple_of
+
+            if width < min_dimension or height < min_dimension:
+                width = max(width, min_dimension)
+                height = max(height, min_dimension)
+                width = (width // multiple_of) * multiple_of
+                height = (height // multiple_of) * multiple_of
+
+            # Resize if needed
+            if img.size != (width, height):
+                img = img.resize((width, height), Image.Resampling.LANCZOS)
+                print(f"Adjusted image dimensions to {width}x{height} (VAE compatible)")
+
             # Convert to tensor
             img_array = np.array(img).astype(np.float32) / 255.0
 
-            # img_array shape is (H, W, C) from PIL - shape: (2008, 1512, 3)
-            # Convert to (1, C, H, W) format - shape: (1, 3, 2008, 1512)
+            # img_array shape is (H, W, C) from PIL
+            # Convert to (1, C, H, W) format for ComfyUI
             if img_array.ndim == 3:
                 img_tensor = torch.from_numpy(img_array.transpose(2, 0, 1)).unsqueeze(0)
             else:
                 img_tensor = torch.from_numpy(img_array).unsqueeze(0).unsqueeze(0)
 
-            width = img.width if img else None
-            height = img.height if img else None
+            original_width = img.width if img else width
+            original_height = img.height if img else height
 
-            return comfy_api_io.NodeOutput(img_tensor, width, height)
+            return comfy_api_io.NodeOutput(img_tensor, original_width, original_height)
 
         except Exception:
             import traceback
