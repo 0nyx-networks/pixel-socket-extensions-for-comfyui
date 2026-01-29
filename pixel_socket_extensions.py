@@ -236,9 +236,20 @@ class PixelSocketLoadImageFromUrlNode(comfy_api_io.ComfyNode):
 
             img = Image.open(io.BytesIO(img_data)).convert("RGBA")
 
-            # アスペクト比を維持しながらリサイズ
-            img.thumbnail((width, height), Image.Resampling.LANCZOS)
+            # アスペクト比を維持しながらwidth/height以内の最大サイズにリサイズ
+            original_width, original_height = img.size
+            aspect_ratio = original_width / original_height
 
+            if width / height > aspect_ratio:
+                # 高さに合わせる
+                new_height = height
+                new_width = int(height * aspect_ratio)
+            else:
+                # 幅に合わせる
+                new_width = width
+                new_height = int(width / aspect_ratio)
+
+            img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
             width_output, height_output = img.size
 
             img_array = np.array(img).astype(np.float32) / 255.0
