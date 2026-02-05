@@ -2,14 +2,13 @@ from typing import Any
 import time
 import websocket
 
-from PIL import Image
 import comfy # pyright: ignore[reportMissingImports]
 from comfy_api.latest import io as comfy_api_io # pyright: ignore[reportMissingImports]
 import torch # pyright: ignore[reportMissingImports]
 import msgpack
 import zstd
 
-from .pixel_socket_extensions import PixelSocketExtensions
+from .pixel_socket_extensions import PixelSocketUnits
 
 class PixelSocketDeliveryImageNode(comfy_api_io.ComfyNode):
     @classmethod
@@ -131,7 +130,7 @@ class PixelSocketDeliveryImageNode(comfy_api_io.ComfyNode):
                 "comfyuiVersion": getattr(comfy, "__version__", "unknown"),
             }
 
-            img_bytes = PixelSocketExtensions.tensor_to_image_bytes(image, file_format, oxipng_level, metadata)
+            img_bytes = PixelSocketUnits.tensor_to_image_bytes(image, file_format, oxipng_level, metadata)
             img_size = len(img_bytes)
 
             # Create payload

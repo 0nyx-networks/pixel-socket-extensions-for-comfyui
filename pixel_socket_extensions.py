@@ -12,7 +12,6 @@ from comfy_api.latest import ComfyExtension, io as comfy_api_io # pyright: ignor
 import torch # pyright: ignore[reportMissingImports]
 import httpx
 
-from .pixel_socket_node_delivery import PixelSocketDeliveryImageNode
 
 class PixelSocketLoadImageFromUrlNode(comfy_api_io.ComfyNode):
     @classmethod
@@ -176,14 +175,7 @@ class PixelSocketResizeImageNode(comfy_api_io.ComfyNode):
 
         return PixelSocketExtensions.create_fallback_image(width, height)
 
-class PixelSocketExtensions(ComfyExtension):
-    async def get_node_list(self) -> list[type[comfy_api_io.ComfyNode]]:
-        return [
-                    PixelSocketDeliveryImageNode,
-                    PixelSocketLoadImageFromUrlNode,
-                    PixelSocketResizeImageNode,
-               ]
-
+class PixelSocketUnits:
     @classmethod
     def tensor_to_image(cls, image: torch.Tensor) -> Image.Image:
         arr = image.detach().cpu().numpy()
@@ -252,6 +244,15 @@ class PixelSocketExtensions(ComfyExtension):
         img_array = np.array(blank_img).astype(np.float32) / 255.0
         img_tensor = torch.from_numpy(img_array).unsqueeze(0)
         return comfy_api_io.NodeOutput(img_tensor, width, height)
+
+class PixelSocketExtensions(ComfyExtension):
+    async def get_node_list(self) -> list[type[comfy_api_io.ComfyNode]]:
+        from .pixel_socket_node_delivery import PixelSocketDeliveryImageNode
+        return [
+                    PixelSocketDeliveryImageNode,
+                    PixelSocketLoadImageFromUrlNode,
+                    PixelSocketResizeImageNode,
+               ]
 
 async def comfy_entrypoint() -> ComfyExtension:
     return PixelSocketExtensions()
