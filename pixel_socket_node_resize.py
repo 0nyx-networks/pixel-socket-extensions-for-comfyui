@@ -1,11 +1,10 @@
 import numpy as np
 
 from PIL import Image
-from PIL.PngImagePlugin import PngInfo
 from comfy_api.latest import io as comfy_api_io # pyright: ignore[reportMissingImports]
 import torch # pyright: ignore[reportMissingImports]
 
-from .pixel_socket_extensions import PixelSocketUnits
+from .pixel_socket_units import PixelSocketUnits
 
 class PixelSocketResizeImageNode(comfy_api_io.ComfyNode):
     @classmethod

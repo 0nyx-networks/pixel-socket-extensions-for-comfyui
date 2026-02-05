@@ -7,7 +7,7 @@ from comfy_api.latest import io as comfy_api_io # pyright: ignore[reportMissingI
 import torch # pyright: ignore[reportMissingImports]
 import httpx
 
-from .pixel_socket_extensions import PixelSocketUnits
+from .pixel_socket_units import PixelSocketUnits
 
 class PixelSocketLoadImageFromUrlNode(comfy_api_io.ComfyNode):
     @classmethod
