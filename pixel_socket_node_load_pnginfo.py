@@ -1,22 +1,30 @@
 import json
+import os
 from typing import Any
+import re
 
 from PIL import Image
 import piexif
+
 from comfy_api.latest import io as comfy_api_io, ui as comfy_api_ui # pyright: ignore[reportMissingImports]
-import torch # pyright: ignore[reportMissingImports]
+import folder_paths # pyright: ignore[reportMissingImports]
 
 class PixelSocketLoadImageInfoNode(comfy_api_io.ComfyNode):
     @classmethod
     def define_schema(cls) -> comfy_api_io.Schema:
+        input_dir = folder_paths.get_input_directory()
+        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
+        files = folder_paths.filter_files_content_types(files, ["image"])
+
         return comfy_api_io.Schema(
-            node_id="PixelSocketLoadImageInfo",
-            display_name="Load Image info",
+            node_id="PixelSocketLoadImageInfoNode",
+            display_name="Load Image info Node",
             category="PixelSocket/Load",
-            is_output_node=True,
             inputs=[
-                comfy_api_io.Combo.Input("image",
-                    upload=comfy_api_io.UploadType.image
+                comfy_api_io.Combo.Input("image_file",
+                    upload=comfy_api_io.UploadType.image,
+                    image_folder=comfy_api_io.FolderType.input,
+                    options=sorted(files)
                 )
             ],
             outputs=[
@@ -27,14 +35,12 @@ class PixelSocketLoadImageInfoNode(comfy_api_io.ComfyNode):
         )
 
     @classmethod
-    def execute(cls, image: Image.Image, **kwargs) -> Any:
+    def execute(cls, image_file, **kwargs) -> Any:
         def parse_geninfo(geninfo: str):
             """
             geninfo テキストをパースして positive_prompt, negative_prompt, メタデータを抽出
             <lora:...> 形式のテキストを除外
             """
-            import re
-
             # "Negative prompt:" で分割
             if "Negative prompt:" in geninfo:
                 parts = geninfo.split("Negative prompt:", 1)
@@ -78,10 +84,15 @@ class PixelSocketLoadImageInfoNode(comfy_api_io.ComfyNode):
 
             return positive_prompt.strip(), negative_prompt.strip(), json.dumps(metadata)
 
+
+        image_path = folder_paths.get_annotated_filepath(image_file)
+        print(f"[PixelSocketLoadImageInfoNode] Loading image info from: {image_path}")
+
+        image = Image.open(image_path)
+
+        geninfo: str = ""
         items = (image.info or {}).copy()
-
-        geninfo: str = items.pop('parameters', None)
-
+        geninfo += items.pop("parameters", "")
 
         if "exif" in items:
             exif_data = items["exif"]
@@ -97,13 +108,13 @@ class PixelSocketLoadImageInfoNode(comfy_api_io.ComfyNode):
                 exif_comment = exif_comment.decode('utf8', errors="ignore")
 
             if exif_comment:
-                geninfo = exif_comment
+                geninfo += exif_comment
 
         elif "comment" in items: # for gif
             if isinstance(items["comment"], bytes):
-                geninfo = items["comment"].decode('utf8', errors="ignore")
+                geninfo += items["comment"].decode('utf8', errors="ignore")
             else:
-                geninfo = items["comment"]
+                geninfo += items["comment"]
 
         if items.get("Software", None) == "NovelAI":
             pass
@@ -112,8 +123,8 @@ class PixelSocketLoadImageInfoNode(comfy_api_io.ComfyNode):
         (positive_prompt, negative_prompt, metadata) = parse_geninfo(geninfo or "")
 
         # デバッグ/確認用に出力
-        print(f"[PixelSocketLoadPNGinfoFromImage] Positive Prompt: {positive_prompt[:100]}...")
-        print(f"[PixelSocketLoadPNGinfoFromImage] Negative Prompt: {negative_prompt[:100]}...")
-        print(f"[PixelSocketLoadPNGinfoFromImage] Metadata: {metadata}")
+        print(f"[PixelSocketLoadImageInfoNode] Positive Prompt: {positive_prompt}")
+        print(f"[PixelSocketLoadImageInfoNode] Negative Prompt: {negative_prompt}")
+        print(f"[PixelSocketLoadImageInfoNode] Metadata: {metadata}")
 
-        return comfy_api_io.NodeOutput(positive_prompt, negative_prompt, metadata, ui=comfy_api_ui.PreviewImage(image, cls=cls))
+        return comfy_api_io.NodeOutput(positive_prompt, negative_prompt, metadata)
