@@ -1,5 +1,6 @@
 import base64
 import io
+from typing import Any
 import numpy as np
 
 from PIL import Image
@@ -30,7 +31,7 @@ class PixelSocketLoadImageFromUrlNode(comfy_api_io.ComfyNode):
         )
 
     @classmethod
-    def execute(cls, image_url: str, **kwargs) -> None:
+    def execute(cls, image_url: str, **kwargs) -> Any:
         try:
             img_data: bytes = b""
             if image_url.startswith("data:image/"):

@@ -1,6 +1,7 @@
 httpx
 msgpack-python
 numpy
+piexif
 pillow
 pyoxipng
 websocket-client
