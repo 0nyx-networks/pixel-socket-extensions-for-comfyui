@@ -2,14 +2,14 @@
 [project]
 name = "pixel-socket-extensions-for-comfyui"
 description = "Pixel Socket Extensions for ComfyUI"
-version = "0.1.1"
+version = "0.1.2"
 license = { file = "LICENSE" }
 dependencies  = []
 
 [project.urls]
-Repository = "https://github.com/m10i-0nyx/pixel-socket-extensions-for-comfyui"
+Repository = "https://github.com/0nyx-networks/pixel-socket-extensions-for-comfyui"
 
 [tool.comfy]
 PublisherId = "m10i"
 DisplayName = "m10i"
-Icon = "https://raw.githubusercontent.com/m10i-0nyx/pixel-socket-extensions-for-comfyui/refs/heads/main/assets/image.png"
+Icon = "https://raw.githubusercontent.com/0nyx-networks/pixel-socket-extensions-for-comfyui/refs/heads/main/assets/image.png"
