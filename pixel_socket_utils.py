@@ -4,6 +4,8 @@ import oxipng
 
 from PIL import Image
 from comfy_api.latest import io as comfy_api_io # pyright: ignore[reportMissingImports]
+from comfy_api.latest._input import VideoInput # pyright: ignore[reportMissingImports]
+from comfy_api.latest._util import VideoContainer, VideoCodec # pyright: ignore[reportMissingImports]
 import torch # pyright: ignore[reportMissingImports]
 
 class PixelSocketUtils:
@@ -44,6 +46,19 @@ class PixelSocketUtils:
         else:
             raise ValueError("Unsupported format")
 
+        return buf.getvalue()
+
+    @classmethod
+    def video_to_bytes(cls, video: VideoInput, file_format: str) -> bytes:
+        fmt = file_format.lower()
+        if fmt == "mp4":
+            container = VideoContainer.MP4
+            codec = VideoCodec.H264
+        else:
+            raise ValueError("Unsupported video format")
+
+        buf = io.BytesIO()
+        video.save_to(buf, format=container, codec=codec)
         return buf.getvalue()
 
     @classmethod
